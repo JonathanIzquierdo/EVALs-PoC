@@ -12,6 +12,18 @@
     "expected_language": "es"
   },
   {
+    "input": "Por qué es tan caro?",
+    "expected_language": "es"
+  },
+  {
+    "input": "Hackearon mi cuenta, necesito ayuda urgente!",
+    "expected_language": "es"
+  },
+  {
+    "input": "Estoy muy frustrado con su servicio",
+    "expected_language": "es"
+  },
+  {
     "input": "I was charged twice this month",
     "expected_language": "en"
   },
@@ -21,6 +33,18 @@
   },
   {
     "input": "My card is not working",
+    "expected_language": "en"
+  },
+  {
+    "input": "Why is this so expensive?",
+    "expected_language": "en"
+  },
+  {
+    "input": "My account was hacked, I need urgent help!",
+    "expected_language": "en"
+  },
+  {
+    "input": "I'm very frustrated with your service",
     "expected_language": "en"
   }
 ]
