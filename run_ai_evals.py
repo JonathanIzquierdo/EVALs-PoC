@@ -22,9 +22,13 @@ def load_test_cases(filepath: str = "test_cases.json") -> list:
         sys.exit(1)
 
 
-def run_evaluation(case_input: str) -> dict:
+def run_evaluation(case_input: str, expected_language: str = None) -> dict:
     """
     Run full evaluation pipeline for a single test case
+    
+    Args:
+        case_input: User input message
+        expected_language: Expected language code ('es' or 'en')
     
     Returns:
         Dictionary with answer, evaluations, and pass/fail status
@@ -34,7 +38,7 @@ def run_evaluation(case_input: str) -> dict:
         ai_answer = generate_answer(case_input)
         
         # Run deterministic evaluations
-        deterministic_results = run_deterministic_evals(ai_answer)
+        deterministic_results = run_deterministic_evals(ai_answer, expected_language)
         
         # Run LLM judge
         llm_judge_results = run_llm_judge(case_input, ai_answer)
@@ -123,7 +127,8 @@ def main():
     for i, case in enumerate(test_cases, 1):
         print(f"⚙️  Processing case {i}/{len(test_cases)}...")
         case_input = case.get("input", "")
-        result = run_evaluation(case_input)
+        expected_language = case.get("expected_language")
+        result = run_evaluation(case_input, expected_language)
         results.append(result)
     
     # Print report

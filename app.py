@@ -13,6 +13,7 @@ app = FastAPI(title="AI Evals PoC - Customer Support Assistant")
 
 class ChatRequest(BaseModel):
     message: str
+    expected_language: str = None
 
 
 class ChatResponse(BaseModel):
@@ -33,7 +34,7 @@ async def chat(request: ChatRequest):
         logger.info(f"Generated answer: {ai_answer[:50]}...")
         
         # Run deterministic evaluations
-        deterministic_results = run_deterministic_evals(ai_answer)
+        deterministic_results = run_deterministic_evals(ai_answer, request.expected_language)
         logger.info(f"Deterministic evals: {deterministic_results}")
         
         # Run LLM judge evaluation

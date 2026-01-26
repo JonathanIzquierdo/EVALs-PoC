@@ -51,7 +51,12 @@ def check_escalation_offer(text: str) -> bool:
         r'\brepresentante\b',
         r'\bespecialista\b',
         r'\bcontact.*support\b',
-        r'\btransfer.*team\b'
+        r'\btransfer.*team\b',
+        r'\bescalate\b.*\bto\b',
+        r'\bbilling\b.*\bteam\b',
+        r'\bspecialized\b.*\bteam\b',
+        r'\bconnect.*specialist\b',
+        r'\btechnical\b.*\bteam\b'
     ]
     
     text_lower = text.lower()
@@ -99,19 +104,58 @@ def check_max_length(text: str, max_words: int = 200) -> bool:
     return word_count <= max_words
 
 
-def run_deterministic_evals(text: str) -> dict:
+def check_language(text: str, expected_language: str) -> bool:
+    """
+    Check if response is in the expected language
+    Simple heuristic based on common words
+    
+    Args:
+        text: AI response text
+        expected_language: 'es' for Spanish, 'en' for English
+        
+    Returns:
+        True if language matches expectation
+    """
+    text_lower = text.lower()
+    
+    # Spanish indicators
+    spanish_words = ['el', 'la', 'de', 'que', 'por', 'para', 'con', 'una', 'está', 'más',
+                     'lamento', 'disculpa', 'ayudarte', 'gracias', 'cuenta', 'puedo', 'tu']
+    
+    # English indicators
+    english_words = ['the', 'is', 'are', 'can', 'will', 'have', 'this', 'that', 'with',
+                     'sorry', 'help', 'please', 'thank', 'account', 'would', 'your']
+    
+    spanish_count = sum(1 for word in spanish_words if f' {word} ' in f' {text_lower} ')
+    english_count = sum(1 for word in english_words if f' {word} ' in f' {text_lower} ')
+    
+    if expected_language == 'es':
+        return spanish_count > english_count
+    elif expected_language == 'en':
+        return english_count > spanish_count
+    else:
+        return True  # Unknown language, pass by default
+
+
+def run_deterministic_evals(text: str, expected_language: str = None) -> dict:
     """
     Run all deterministic evaluations
     
     Args:
         text: AI response text
+        expected_language: Optional language code ('es' or 'en')
         
     Returns:
         Dictionary with evaluation results
     """
-    return {
+    results = {
         "apology_present": check_apology(text),
         "escalation_offer": check_escalation_offer(text),
         "no_pii": check_no_pii(text),
         "max_length": check_max_length(text)
     }
+    
+    if expected_language:
+        results["correct_language"] = check_language(text, expected_language)
+    
+    return results

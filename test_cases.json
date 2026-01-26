@@ -1,11 +1,26 @@
 [
   {
-    "input": "Me cobraron dos veces este mes"
+    "input": "Me cobraron dos veces este mes",
+    "expected_language": "es"
   },
   {
-    "input": "Quiero cancelar mi cuenta"
+    "input": "Quiero cancelar mi cuenta",
+    "expected_language": "es"
   },
   {
-    "input": "No funciona mi tarjeta"
+    "input": "No funciona mi tarjeta",
+    "expected_language": "es"
+  },
+  {
+    "input": "I was charged twice this month",
+    "expected_language": "en"
+  },
+  {
+    "input": "I want to cancel my account",
+    "expected_language": "en"
+  },
+  {
+    "input": "My card is not working",
+    "expected_language": "en"
   }
 ]
