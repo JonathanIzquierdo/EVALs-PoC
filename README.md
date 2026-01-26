@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI Evals PoC
 
 A Proof of Concept for evaluating AI customer support responses using both deterministic rules and LLM-based judging in a CI/CD pipeline.
@@ -274,3 +275,7 @@ This is a Proof of Concept for demonstration purposes.
 ## Contact
 
 For questions or improvements, please open an issue in the repository.
+=======
+# EVALs-PoC
+EVALs - Pipelines
+>>>>>>> 6504d74b0afb1a00d2282471082a8a7a6f475bbe

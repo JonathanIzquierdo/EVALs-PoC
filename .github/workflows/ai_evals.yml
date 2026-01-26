@@ -27,6 +27,9 @@ jobs:
     - name: Run AI Evals
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
+        OPENAI_DEPLOYMENT_ID: ${{ secrets.OPENAI_DEPLOYMENT_ID }}
+        OPENAI_API_VERSION: ${{ secrets.OPENAI_API_VERSION }}
       run: |
         python run_ai_evals.py
         
