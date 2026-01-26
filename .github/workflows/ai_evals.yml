@@ -1,11 +1,16 @@
 name: AI Evals CI
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
   workflow_dispatch:
+    inputs:
+      api_mode:
+        description: 'Run against deployed API (true) or direct mode (false)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   ai-evals:
@@ -24,15 +29,43 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        
-    - name: Run AI Evals
+    
+    - name: Start API server (if API mode)
+      if: github.event.inputs.api_mode == 'true'
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
         OPENAI_DEPLOYMENT_ID: ${{ secrets.OPENAI_DEPLOYMENT_ID }}
         OPENAI_API_VERSION: ${{ secrets.OPENAI_API_VERSION }}
+        OPENAI_TEMPERATURE: ${{ secrets.OPENAI_TEMPERATURE }}
+      run: |
+        echo "Starting API server..."
+        python app.py &
+        API_PID=$!
+        echo "API_PID=$API_PID" >> $GITHUB_ENV
+        sleep 15
+        curl -f http://localhost:8000/health || exit 1
+        echo "✅ API server is healthy"
+        
+    - name: Run AI Evals
+      env:
+        USE_API_MODE: ${{ github.event.inputs.api_mode || 'false' }}
+        API_BASE_URL: http://localhost:8000
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
+        OPENAI_DEPLOYMENT_ID: ${{ secrets.OPENAI_DEPLOYMENT_ID }}
+        OPENAI_API_VERSION: ${{ secrets.OPENAI_API_VERSION }}
+        OPENAI_TEMPERATURE: ${{ secrets.OPENAI_TEMPERATURE }}
       run: |
         python run_ai_evals.py
+    
+    - name: Stop API server
+      if: always() && github.event.inputs.api_mode == 'true'
+      run: |
+        if [ ! -z "$API_PID" ]; then
+          kill $API_PID || true
+          echo "API server stopped"
+        fi
         
     - name: Upload results
       if: always()

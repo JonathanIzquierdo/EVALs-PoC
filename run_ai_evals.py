@@ -7,9 +7,14 @@ Runs automated evaluations on test cases and exits with appropriate code for CI/
 
 import json
 import sys
-from llm_client import generate_answer
+import os
+import requests
 from evaluators.deterministic import run_deterministic_evals
 from evaluators.llm_judge import run_llm_judge, passed_threshold
+
+# Configuration
+USE_API_MODE = os.getenv("USE_API_MODE", "false").lower() == "true"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 
 def load_test_cases(filepath: str = "test_cases.json") -> list:
@@ -20,6 +25,45 @@ def load_test_cases(filepath: str = "test_cases.json") -> list:
     except Exception as e:
         print(f"❌ Error loading test cases: {e}")
         sys.exit(1)
+
+
+def generate_answer_via_api(user_message: str, expected_language: str = None) -> str:
+    """
+    Call the API endpoint to get AI response
+    
+    Args:
+        user_message: User's input message
+        expected_language: Expected language code
+        
+    Returns:
+        AI-generated response
+    """
+    try:
+        url = f"{API_BASE_URL}/chat"
+        payload = {"message": user_message}
+        if expected_language:
+            payload["expected_language"] = expected_language
+        
+        response = requests.post(url, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        return data["answer"]
+    except Exception as e:
+        raise Exception(f"API call failed: {str(e)}")
+
+
+def generate_answer_direct(user_message: str) -> str:
+    """
+    Call LLM directly (for local development)
+    
+    Args:
+        user_message: User's input message
+        
+    Returns:
+        AI-generated response
+    """
+    from llm_client import generate_answer
+    return generate_answer(user_message)
 
 
 def run_evaluation(case_input: str, expected_language: str = None) -> dict:
@@ -34,8 +78,11 @@ def run_evaluation(case_input: str, expected_language: str = None) -> dict:
         Dictionary with answer, evaluations, and pass/fail status
     """
     try:
-        # Generate AI answer
-        ai_answer = generate_answer(case_input)
+        # Generate AI answer (via API or direct)
+        if USE_API_MODE:
+            ai_answer = generate_answer_via_api(case_input, expected_language)
+        else:
+            ai_answer = generate_answer_direct(case_input)
         
         # Run deterministic evaluations
         deterministic_results = run_deterministic_evals(ai_answer, expected_language)
@@ -117,6 +164,13 @@ def print_report(results: list):
 def main():
     """Main execution function"""
     print("🚀 Starting AI Evals Pipeline...\n")
+    
+    # Show execution mode
+    if USE_API_MODE:
+        print(f"📡 API Mode: Testing against {API_BASE_URL}")
+    else:
+        print("💻 Direct Mode: Testing with local LLM client")
+    print()
     
     # Load test cases
     test_cases = load_test_cases()
