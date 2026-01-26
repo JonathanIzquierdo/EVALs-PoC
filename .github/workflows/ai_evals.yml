@@ -1,6 +1,14 @@
 name: AI Evals CI
 
 on:
+  workflow_call:
+    inputs:
+      api_mode:
+        description: 'Run in API mode (true) or direct mode (false)'
+        required: false
+        type: string
+        default: 'true'
+  
   workflow_dispatch:
     inputs:
       api_mode:
@@ -11,9 +19,6 @@ on:
         options:
           - 'true'
           - 'false'
-  
-  repository_dispatch:
-    types: [run-ai-evals]
 
 jobs:
   evaluate:
@@ -36,13 +41,11 @@ jobs:
     - name: Determine evaluation mode
       id: mode
       run: |
-        if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-          echo "api_mode=true" >> $GITHUB_OUTPUT
-          echo "📡 Triggered by deploy pipeline - using API mode"
-          echo "Environment: ${{ github.event.client_payload.environment }}"
+        echo "api_mode=${{ inputs.api_mode }}" >> $GITHUB_OUTPUT
+        if [ "${{ inputs.api_mode }}" == "true" ]; then
+          echo "📡 Running in API mode"
         else
-          echo "api_mode=${{ inputs.api_mode }}" >> $GITHUB_OUTPUT
-          echo "🔧 Manual trigger - API mode: ${{ inputs.api_mode }}"
+          echo "💻 Running in direct mode"
         fi
     
     - name: Start API server (if API mode)

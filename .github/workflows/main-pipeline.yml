@@ -1,0 +1,29 @@
+name: Main CI/CD Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    name: 🚀 Deploy Product API
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: ${{ inputs.environment }}
+    secrets: inherit
+    
+  evaluate:
+    name: 🧪 Run AI Evaluations
+    needs: deploy
+    uses: ./.github/workflows/ai_evals.yml
+    with:
+      api_mode: 'true'
+    secrets: inherit
