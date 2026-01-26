@@ -39,6 +39,9 @@ def check_escalation_offer(text: str) -> bool:
     """
     escalation_patterns = [
         r'\bequipo\b.*\bespecializado\b',
+        r'\bequipo\b.*\bfacturación\b',
+        r'\bequipo\b.*\bfacturacion\b',
+        r'\bequipo\b.*\bcorrespondiente\b',
         r'\bcontactar\b.*\bsoporte\b',
         r'\btransferir\b',
         r'\bescalar\b',

@@ -83,13 +83,13 @@ def print_report(results: list):
     for i, result in enumerate(results, 1):
         status = "✅ PASS" if result["passed"] else "❌ FAIL"
         print(f"CASE {i}: {status}")
-        print(f"  Input: {result['input'][:60]}...")
+        print(f"  Input: {result['input']}")
         
         if not result["passed"]:
             print(f"  Reasons: {', '.join(result['failure_reasons'])}")
         
         if "answer" in result:
-            print(f"  Answer: {result['answer'][:80]}...")
+            print(f"  Answer: {result['answer']}")
             print(f"  Deterministic: {result['deterministic']}")
             print(f"  LLM Judge: {result['llm_judge']}")
         
