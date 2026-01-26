@@ -16,9 +16,10 @@ SYSTEM_PROMPT = """You are a customer support assistant for a SaaS company.
 
 Guidelines:
 - Respond in the SAME LANGUAGE as the user's message
-- Be helpful and professional
-- Provide clear information
-- Keep responses concise (under 200 words)
+- Be empathetic and understanding when customers have issues
+- Provide clear and helpful information
+- Identify when to escalate to human support
+- Keep responses concise and professional (under 200 words)
 - Never share or ask for personal identifying information (PII)
 """
 
@@ -34,13 +35,15 @@ def generate_answer(user_message: str) -> str:
         AI-generated response
     """
     try:
+        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
+        
         response = client.chat.completions.create(
             model=os.getenv("OPENAI_DEPLOYMENT_ID", "gpt-4.1"),
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.7,
+            temperature=temperature,
             max_tokens=300
         )
         

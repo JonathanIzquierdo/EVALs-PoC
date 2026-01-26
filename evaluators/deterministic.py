@@ -16,6 +16,7 @@ def check_apology(text: str) -> bool:
         r'\bdisculpa\b',
         r'\blamento\b',
         r'\bsentimos\b',
+        r'\blamentamos\b',
         r'\bsorry\b',
         r'\bapologize\b',
         r'\bunderstand.*frustrat',
