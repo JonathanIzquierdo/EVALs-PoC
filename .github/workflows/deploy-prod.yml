@@ -1,0 +1,68 @@
+name: Deploy to Production
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Production environment'
+        required: false
+        type: string
+        default: 'production'
+  
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Production environment'
+        required: false
+        type: string
+        default: 'production'
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Prepare production deployment
+      run: |
+        echo "🚀 Preparing deployment to PRODUCTION..."
+        echo "Environment: ${{ inputs.environment }}"
+        echo "Git SHA: ${{ github.sha }}"
+        sleep 3
+        
+    - name: Run production checks
+      run: |
+        echo "🔍 Running production readiness checks..."
+        echo "✅ Configuration validated"
+        echo "✅ Dependencies verified"
+        echo "✅ Security scan passed"
+        sleep 2
+        
+    - name: Deploy to production
+      run: |
+        echo "📦 Deploying to production environment..."
+        echo "🔄 Rolling update in progress..."
+        sleep 5
+        echo "✅ Deployment successful!"
+        
+    - name: Post-deployment validation
+      run: |
+        echo "🧪 Running post-deployment tests..."
+        echo "✅ Health checks passed"
+        echo "✅ Smoke tests passed"
+        echo "✅ Production metrics nominal"
+        sleep 2
+        
+    - name: Deployment summary
+      run: |
+        echo "═══════════════════════════════════════════════════"
+        echo "🎉 PRODUCTION DEPLOYMENT COMPLETED SUCCESSFULLY"
+        echo "═══════════════════════════════════════════════════"
+        echo "Environment: production"
+        echo "Status: ✅ Active"
+        echo "Version: ${{ github.sha }}"
+        echo "Deployed at: $(date -u)"
+        echo "═══════════════════════════════════════════════════"

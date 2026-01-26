@@ -27,3 +27,11 @@ jobs:
     with:
       api_mode: 'true'
     secrets: inherit
+    
+  deploy-production:
+    name: 🌐 Deploy to Production
+    needs: evaluate
+    uses: ./.github/workflows/deploy-prod.yml
+    with:
+      environment: 'production'
+    secrets: inherit
