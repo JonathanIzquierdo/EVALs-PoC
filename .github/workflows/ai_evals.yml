@@ -4,16 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       api_mode:
-        description: 'Run against deployed API (true) or direct mode (false)'
-        required: false
+        description: 'Run in API mode (true) or direct mode (false)'
+        required: true
         default: 'true'
         type: choice
         options:
           - 'true'
           - 'false'
+  
+  repository_dispatch:
+    types: [run-ai-evals]
 
 jobs:
-  ai-evals:
+  evaluate:
     runs-on: ubuntu-latest
     
     steps:
@@ -30,42 +33,89 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Determine evaluation mode
+      id: mode
+      run: |
+        if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+          echo "api_mode=true" >> $GITHUB_OUTPUT
+          echo "📡 Triggered by deploy pipeline - using API mode"
+          echo "Environment: ${{ github.event.client_payload.environment }}"
+        else
+          echo "api_mode=${{ inputs.api_mode }}" >> $GITHUB_OUTPUT
+          echo "🔧 Manual trigger - API mode: ${{ inputs.api_mode }}"
+        fi
+    
     - name: Start API server (if API mode)
-      if: github.event.inputs.api_mode == 'true'
+      if: steps.mode.outputs.api_mode == 'true'
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
         OPENAI_DEPLOYMENT_ID: ${{ secrets.OPENAI_DEPLOYMENT_ID }}
         OPENAI_API_VERSION: ${{ secrets.OPENAI_API_VERSION }}
-        OPENAI_TEMPERATURE: ${{ secrets.OPENAI_TEMPERATURE }}
+        OPENAI_TEMPERATURE: "0.9"
       run: |
-        echo "Starting API server..."
-        python app.py &
-        API_PID=$!
-        echo "API_PID=$API_PID" >> $GITHUB_ENV
+        echo "Starting API server for evaluation..."
+        nohup python app.py > api.log 2>&1 &
+        echo $! > api.pid
         sleep 15
-        curl -f http://localhost:8000/health || exit 1
-        echo "✅ API server is healthy"
         
-    - name: Run AI Evals
+    - name: Health check (if API mode)
+      if: steps.mode.outputs.api_mode == 'true'
+      run: |
+        echo "Checking API health..."
+        max_attempts=10
+        attempt=0
+        while [ $attempt -lt $max_attempts ]; do
+          if curl -f http://localhost:8000/health; then
+            echo "✅ API is healthy and ready for evaluation"
+            exit 0
+          fi
+          echo "Waiting for API... ($((attempt+1))/$max_attempts)"
+          sleep 3
+          attempt=$((attempt+1))
+        done
+        echo "❌ API health check failed"
+        echo "=== API Logs ==="
+        cat api.log
+        exit 1
+        
+    - name: Run AI Evaluations
       env:
-        USE_API_MODE: ${{ github.event.inputs.api_mode || 'false' }}
+        USE_API_MODE: ${{ steps.mode.outputs.api_mode }}
         API_BASE_URL: http://localhost:8000
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
         OPENAI_DEPLOYMENT_ID: ${{ secrets.OPENAI_DEPLOYMENT_ID }}
         OPENAI_API_VERSION: ${{ secrets.OPENAI_API_VERSION }}
-        OPENAI_TEMPERATURE: ${{ secrets.OPENAI_TEMPERATURE }}
+        OPENAI_TEMPERATURE: "0.9"
       run: |
+        echo "🚀 Running AI evaluations..."
         python run_ai_evals.py
+        
+    - name: Upload evaluation results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: evaluation-results
+        path: |
+          *.log
+        retention-days: 30
     
     - name: Stop API server
-      if: always() && github.event.inputs.api_mode == 'true'
+      if: always() && steps.mode.outputs.api_mode == 'true'
       run: |
-        if [ ! -z "$API_PID" ]; then
-          kill $API_PID || true
+        if [ -f api.pid ]; then
+          echo "Stopping API server..."
+          kill $(cat api.pid) || true
+          rm api.pid
           echo "API server stopped"
         fi
+        
+    - name: Show API logs on failure
+      if: failure() && steps.mode.outputs.api_mode == 'true'
+      run: |
+        echo "=== API Server Logs ==="
+        cat api.log || echo "No logs available"
         
     - name: Upload results
       if: always()
